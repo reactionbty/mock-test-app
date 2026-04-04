@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mock Test Platform</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: radial-gradient(circle at top, #1a1d24, #0f1115);
+      display: flex;
+      justify-content: center;
+      color: white;
+    }
+
+    .app-container {
+      max-width: 480px;
+      width: 100%;
+      min-height: 100vh;
+    }
+
+    @media (max-width: 600px) {
+      body { display: block; }
+    }
+
+    .screen {
+      padding: 20px;
+      text-align: center;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 15px;
+      padding-bottom: 80px;
+    }
+
+    button {
+      padding: 15px;
+      border-radius: 15px;
+      border: none;
+      background: linear-gradient(135deg, #1f2937, #374151);
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      transform: translateY(-5px) scale(1.05);
+      background: linear-gradient(135deg, #2b7cff, #5aa2ff);
+    }
+
+    .top { padding: 15px; }
+
+    .progress {
+      height: 8px;
+      background: #2c2d31;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: #4da6ff;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    .question {
+      padding: 20px;
+      font-size: 18px;
+    }
+
+    .option {
+      background: #1c1f26;
+      margin: 10px 15px;
+      padding: 15px;
+      border-radius: 10px;
+    }
+
+    .correct { background: #2e7d32; }
+    .wrong { background: #c62828; }
+
+    .bottom {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      gap: 10px;
+      padding: 12px;
+      background: #111;
+    }
+
+    .bottom button { flex: 1; }
+
+    /* PREMIUM LOADER */
+    #loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 12, 16, 0.96);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+
+    .loader-box {
+      text-align: center;
+      padding: 30px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.03);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    }
+
+    .ring {
+      width: 60px;
+      height: 60px;
+      margin: auto;
+      border-radius: 50%;
+      border: 4px solid #2c2d31;
+      border-top: 4px solid #4da6ff;
+      animation: spin 1s linear infinite;
+      box-shadow: 0 0 15px rgba(77,166,255,0.5);
+    }
+
+    .progress-line {
+      width: 200px;
+      height: 6px;
+      background: #2c2d31;
+      border-radius: 10px;
+      margin-top: 15px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #2b7cff, #5aa2ff);
+      animation: loadBar 2s infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @keyframes loadBar {
+      0% { width: 0%; }
+      50% { width: 80%; }
+      100% { width: 0%; }
+    }
+
+  </style>
+</head>
+
+<body>
+
+<div class="app-container">
+
+<!-- SUBJECT -->
+<div id="subjectScreen" class="screen">
+  <h2>📘 Select Subject</h2>
+  <div id="subjectButtons" class="grid"></div>
+</div>
+
+<!-- CHAPTER -->
+<div id="chapterScreen" class="screen" style="display:none;">
+  <h2>📖 Select Chapter</h2>
+  <div id="chapterButtons" class="grid"></div>
+  <div class="bottom">
+    <button onclick="goBackToSubjects()">Back</button>
+  </div>
+</div>
+
+<!-- SECTION -->
+<div id="sectionScreen" class="screen" style="display:none;">
+  <h2>🧩 Select Section</h2>
+  <div id="sectionButtons" class="grid"></div>
+  <div class="bottom">
+    <button onclick="goBackToChapters()">Back</button>
+  </div>
+</div>
+
+<!-- TEST -->
+<div id="testScreen" style="display:none;">
+  <div class="top">
+    <div class="progress"><div id="progressBar" class="progress-bar"></div></div>
+    <div class="stats">
+      <div id="count"></div>
+      <div>❌ <span id="wrong">0</span></div>
+      <div>✅ <span id="correct">0</span></div>
+    </div>
+  </div>
+
+  <div id="question" class="question"></div>
+  <div id="options"></div>
+
+  <div class="bottom">
+    <button onclick="exitTest()">Exit</button>
+    <button onclick="prevQuestion()">Back</button>
+    <button onclick="nextQuestion()">Next</button>
+  </div>
+</div>
+
+</div>
+
+<!-- PREMIUM LOADER -->
+<div id="loader">
+  <div class="loader-box">
+    <div class="ring"></div>
+    <h3>Loading</h3>
+    <p>Please wait...</p>
+    <div class="progress-line">
+      <div class="progress-fill"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+const subjects = {
+  "Polity": {
+    "President and Vise-President": "https://opensheet.elk.sh/1tEG2kuga3HyZRIjSjqJ4A0zqZ9yJPEk8ePly6ct_-TY/1"
+  },
+
+  "English Vocab": {
+    "One Word Substitution": "https://opensheet.elk.sh/1tEG2kuga3HyZRIjSjqJ4A0zqZ9yJPEk8ePly6ct_-TY/1",
+    "Idiom and Phrases": "https://opensheet.elk.sh/1tEG2kuga3HyZRIjSjqJ4A0zqZ9yJPEk8ePly6ct_-TY/1",
+    "Spellings": "https://opensheet.elk.sh/1tEG2kuga3HyZRIjSjqJ4A0zqZ9yJPEk8ePly6ct_-TY/1",
+    "Antonyms and Synonims": "https://opensheet.elk.sh/1tEG2kuga3HyZRIjSjqJ4A0zqZ9yJPEk8ePly6ct_-TY/1"
+  }
+};
+
+const QUESTIONS_PER_SECTION = 100;
+
+let data=[], filteredData=[], index=0, correctCount=0, wrongCount=0, locked=false, answers={};
+
+function showLoader(){ loader.style.display="flex"; }
+function hideLoader(){ loader.style.display="none"; }
+
+function loadSubjects(){
+  let html="";
+  for(let sub in subjects){
+    html+=`<button onclick="loadChapters('${sub}')">${sub}</button>`;
+  }
+  subjectButtons.innerHTML=html;
+}
+
+function loadChapters(sub){
+  let html="";
+  for(let ch in subjects[sub]){
+    html+=`<button onclick="loadData('${sub}','${ch}')">${ch}</button>`;
+  }
+  subjectScreen.style.display="none";
+  chapterScreen.style.display="block";
+  chapterButtons.innerHTML=html;
+}
+
+function loadData(sub,ch){
+  showLoader();
+  fetch(subjects[sub][ch])
+  .then(res=>res.json())
+  .then(json=>{
+    data=json;
+    setTimeout(()=>{
+      hideLoader();
+      chapterScreen.style.display="none";
+      sectionScreen.style.display="block";
+      createSections();
+    },500);
+  });
+}
+
+function createSections(){
+  let total=Math.ceil(data.length/QUESTIONS_PER_SECTION);
+  let html="";
+  for(let i=1;i<=total;i++){
+    html+=`<button onclick="startTest(${i})">Section ${i}</button>`;
+  }
+  sectionButtons.innerHTML=html;
+}
+
+function startTest(sec){
+  let start=(sec-1)*QUESTIONS_PER_SECTION;
+  filteredData=data.slice(start,start+QUESTIONS_PER_SECTION);
+  index=0; correctCount=0; wrongCount=0; answers={};
+  sectionScreen.style.display="none";
+  testScreen.style.display="block";
+  showQuestion();
+}
+
+function showQuestion(){
+  let q=filteredData[index];
+  question.innerText=(index+1)+". "+q.Question;
+
+  let html="";
+  ["A","B","C","D"].forEach(opt=>{
+    html+=`<div class="option" onclick="select('${opt}')">${opt}. ${q[opt]}</div>`;
+  });
+  options.innerHTML=html;
+
+  if(answers[index]){
+    let correct=q.Answer;
+    document.querySelectorAll(".option").forEach((o,i)=>{
+      let l=["A","B","C","D"][i];
+      if(l===correct) o.classList.add("correct");
+      if(l===answers[index] && l!==correct) o.classList.add("wrong");
+    });
+    locked=true;
+  } else locked=false;
+
+  updateUI();
+}
+
+function select(opt){
+  if(locked) return;
+  let correct=filteredData[index].Answer;
+  answers[index]=opt;
+
+  document.querySelectorAll(".option").forEach((o,i)=>{
+    let l=["A","B","C","D"][i];
+    if(l===correct) o.classList.add("correct");
+    if(l===opt && l!==correct) o.classList.add("wrong");
+  });
+
+  opt===correct?correctCount++:wrongCount++;
+  locked=true;
+  updateUI();
+}
+
+function nextQuestion(){ if(index<filteredData.length-1){index++;showQuestion();}}
+function prevQuestion(){ if(index>0){index--;showQuestion();}}
+
+function exitTest(){
+  testScreen.style.display="none";
+  sectionScreen.style.display="block";
+}
+
+function goBackToSubjects(){
+  chapterScreen.style.display="none";
+  subjectScreen.style.display="block";
+}
+
+function goBackToChapters(){
+  sectionScreen.style.display="none";
+  chapterScreen.style.display="block";
+}
+
+function updateUI(){
+  count.innerText=(index+1)+"/filteredData.length";
+  correct.innerText=correctCount;
+  wrong.innerText=wrongCount;
+  progressBar.style.width=((index+1)/filteredData.length*100)+"%";
+}
+
+loadSubjects();
+
+</script>
+
+</body>
+</html>
