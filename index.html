@@ -3,146 +3,170 @@
 <head>
   <title>Mock Test Platform</title>
 
-  <!-- MOBILE VIEW FIX -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
-    body {
-      margin: 0;
-      font-family: Arial;
-      background: radial-gradient(circle at top, #1a1d24, #0f1115);
-      color: white;
-    }
+/* ===== GLOBAL ===== */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial;
+  background: radial-gradient(circle at top, #1a1d24, #0b0d12);
+  color: white;
+}
 
-    .app-container {
-      max-width: 480px;
-      margin: auto;
-      min-height: 100vh;
-    }
+.app-container {
+  max-width: 480px;
+  margin: auto;
+  min-height: 100vh;
+}
 
-    .screen {
-      padding: 16px;
-      text-align: center;
-    }
+/* HEADER */
+.header {
+  padding: 20px 16px 10px;
+}
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      padding-bottom: 80px;
-    }
+.header h2 {
+  margin: 0;
+  font-size: 24px;
+}
 
-    button {
-      padding: 14px;
-      border-radius: 12px;
-      border: none;
-      font-size: 15px;
-      background: linear-gradient(135deg, #1f2937, #374151);
-      color: white;
-      cursor: pointer;
-      transition: 0.2s;
-    }
+.header p {
+  margin: 5px 0 0;
+  color: #aaa;
+  font-size: 13px;
+}
 
-    button:active {
-      transform: scale(0.96);
-      background: linear-gradient(135deg, #2b7cff, #5aa2ff);
-    }
+/* GRID */
+.grid {
+  padding: 10px 16px 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
 
-    .top {
-      padding: 12px;
-    }
+/* CARD */
+.card-btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #14171c, #0d0f13);
+  box-shadow:
+    0 6px 30px rgba(0,0,0,0.7),
+    inset 0 0 0 1px rgba(255,255,255,0.05);
+  transition: 0.25s;
+  animation: fadeUp 0.4s ease;
+}
 
-    .progress {
-      height: 6px;
-      background: #2c2d31;
-      border-radius: 10px;
-      overflow: hidden;
-    }
+.card-btn:active {
+  transform: scale(0.96);
+  background: linear-gradient(145deg, #2b7cff, #5aa2ff);
+}
 
-    .progress-bar {
-      height: 100%;
-      width: 0%;
-      background: #4da6ff;
-    }
+.card-title { font-size: 17px; }
+.card-sub { font-size: 12px; color: #888; margin-top: 4px; }
 
-    .stats {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 8px;
-      font-size: 14px;
-    }
+.badge {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 10px;
+  background: rgba(77,166,255,0.2);
+  color: #4da6ff;
+}
 
-    .question {
-      padding: 16px;
-      font-size: 17px;
-      line-height: 1.4;
-    }
+.card-icon {
+  font-size: 18px;
+  margin-top: 6px;
+}
 
-    .option {
-      background: #1c1f26;
-      margin: 8px 12px;
-      padding: 14px;
-      border-radius: 10px;
-      font-size: 15px;
-    }
+/* TEST UI */
+.top {
+  padding: 12px;
+}
 
-    .correct { background: #2e7d32; }
-    .wrong { background: #c62828; }
+.progress {
+  height: 6px;
+  background: #2c2d31;
+  border-radius: 10px;
+}
 
-    .bottom {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      max-width: 480px;
-      margin: auto;
-      display: flex;
-      gap: 8px;
-      padding: 10px;
-      background: #111;
-    }
+.progress-bar {
+  height: 100%;
+  background: #4da6ff;
+  width: 0%;
+}
 
-    .bottom button {
-      flex: 1;
-      font-size: 14px;
-      padding: 12px;
-    }
+.stats {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 14px;
+}
 
-    /* LOADER */
-    #loader {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(10, 12, 16, 0.96);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 999;
-    }
+.question {
+  padding: 16px;
+  font-size: 17px;
+}
 
-    .loader-box {
-      text-align: center;
-      padding: 25px;
-      border-radius: 16px;
-      background: rgba(255,255,255,0.03);
-      backdrop-filter: blur(10px);
-    }
+.option {
+  background: #1c1f26;
+  margin: 8px 12px;
+  padding: 14px;
+  border-radius: 10px;
+}
 
-    .ring {
-      width: 50px;
-      height: 50px;
-      margin: auto;
-      border-radius: 50%;
-      border: 4px solid #2c2d31;
-      border-top: 4px solid #4da6ff;
-      animation: spin 1s linear infinite;
-    }
+.correct { background: #2e7d32; }
+.wrong { background: #c62828; }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+/* BOTTOM BAR */
+.bottom {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-width: 480px;
+  margin: auto;
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(10,10,12,0.9);
+}
+
+.bottom button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  color: white;
+  background: linear-gradient(135deg, #1f2937, #374151);
+}
+
+/* LOADER */
+#loader {
+  position: fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  background: rgba(0,0,0,0.9);
+  display:none;
+  justify-content:center;
+  align-items:center;
+}
+
+.ring {
+  width:50px;height:50px;
+  border-radius:50%;
+  border:4px solid #333;
+  border-top:4px solid #4da6ff;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@keyframes fadeUp {
+  from {opacity:0; transform:translateY(15px);}
+  to {opacity:1; transform:translateY(0);}
+}
   </style>
 </head>
 
@@ -151,14 +175,20 @@
 <div class="app-container">
 
 <!-- SUBJECT -->
-<div id="subjectScreen" class="screen">
-  <h2>📘 Select Subject</h2>
+<div id="subjectScreen">
+  <div class="header">
+    <h2>👋 Welcome</h2>
+    <p>Select a subject to begin</p>
+  </div>
   <div id="subjectButtons" class="grid"></div>
 </div>
 
 <!-- CHAPTER -->
-<div id="chapterScreen" class="screen" style="display:none;">
-  <h2>📖 Select Chapter</h2>
+<div id="chapterScreen" style="display:none;">
+  <div class="header">
+    <h2>📖 Chapters</h2>
+    <p>Choose a chapter</p>
+  </div>
   <div id="chapterButtons" class="grid"></div>
   <div class="bottom">
     <button onclick="goBackToSubjects()">Back</button>
@@ -166,8 +196,11 @@
 </div>
 
 <!-- SECTION -->
-<div id="sectionScreen" class="screen" style="display:none;">
-  <h2>🧩 Select Section</h2>
+<div id="sectionScreen" style="display:none;">
+  <div class="header">
+    <h2>🧠 Sections</h2>
+    <p>Select a section</p>
+  </div>
   <div id="sectionButtons" class="grid"></div>
   <div class="bottom">
     <button onclick="goBackToChapters()">Back</button>
@@ -198,13 +231,7 @@
 </div>
 
 <!-- LOADER -->
-<div id="loader">
-  <div class="loader-box">
-    <div class="ring"></div>
-    <h3>Loading</h3>
-    <p>Please wait...</p>
-  </div>
-</div>
+<div id="loader"><div class="ring"></div></div>
 
 <script>
 
@@ -224,7 +251,17 @@ function hideLoader(){ loader.style.display="none"; }
 function loadSubjects(){
   let html="";
   for(let sub in subjects){
-    html+=`<button onclick="loadChapters('${sub}')">${sub}</button>`;
+    html+=`
+    <div class="card-btn" onclick="loadChapters('${sub}')">
+      <div>
+        <div class="card-title">📘 ${sub}</div>
+        <div class="card-sub">Practice MCQs</div>
+      </div>
+      <div>
+        <div class="badge">New</div>
+        <div class="card-icon">›</div>
+      </div>
+    </div>`;
   }
   subjectButtons.innerHTML=html;
 }
@@ -232,7 +269,17 @@ function loadSubjects(){
 function loadChapters(sub){
   let html="";
   for(let ch in subjects[sub]){
-    html+=`<button onclick="loadData('${sub}','${ch}')">${ch}</button>`;
+    html+=`
+    <div class="card-btn" onclick="loadData('${sub}','${ch}')">
+      <div>
+        <div class="card-title">📖 ${ch}</div>
+        <div class="card-sub">100+ Questions</div>
+      </div>
+      <div>
+        <div class="badge">Start</div>
+        <div class="card-icon">›</div>
+      </div>
+    </div>`;
   }
   subjectScreen.style.display="none";
   chapterScreen.style.display="block";
@@ -245,12 +292,10 @@ function loadData(sub,ch){
   .then(res=>res.json())
   .then(json=>{
     data=json;
-    setTimeout(()=>{
-      hideLoader();
-      chapterScreen.style.display="none";
-      sectionScreen.style.display="block";
-      createSections();
-    },500);
+    hideLoader();
+    chapterScreen.style.display="none";
+    sectionScreen.style.display="block";
+    createSections();
   });
 }
 
@@ -258,7 +303,17 @@ function createSections(){
   let total=Math.ceil(data.length/QUESTIONS_PER_SECTION);
   let html="";
   for(let i=1;i<=total;i++){
-    html+=`<button onclick="startTest(${i})">Section ${i}</button>`;
+    html+=`
+    <div class="card-btn" onclick="startTest(${i})">
+      <div>
+        <div class="card-title">Section ${i}</div>
+        <div class="card-sub">${QUESTIONS_PER_SECTION} Questions</div>
+      </div>
+      <div>
+        <div class="badge">${i===1?"Recommended":"Practice"}</div>
+        <div class="card-icon">▶</div>
+      </div>
+    </div>`;
   }
   sectionButtons.innerHTML=html;
 }
@@ -282,16 +337,6 @@ function showQuestion(){
   });
   options.innerHTML=html;
 
-  if(answers[index]){
-    let correct=q.Answer;
-    document.querySelectorAll(".option").forEach((o,i)=>{
-      let l=["A","B","C","D"][i];
-      if(l===correct) o.classList.add("correct");
-      if(l===answers[index] && l!==correct) o.classList.add("wrong");
-    });
-    locked=true;
-  } else locked=false;
-
   updateUI();
 }
 
@@ -311,8 +356,8 @@ function select(opt){
   updateUI();
 }
 
-function nextQuestion(){ if(index<filteredData.length-1){index++;showQuestion();}}
-function prevQuestion(){ if(index>0){index--;showQuestion();}}
+function nextQuestion(){ if(index<filteredData.length-1){index++;locked=false;showQuestion();}}
+function prevQuestion(){ if(index>0){index--;locked=false;showQuestion();}}
 
 function exitTest(){
   testScreen.style.display="none";
