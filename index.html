@@ -2,7 +2,6 @@
 <html>
 <head>
   <title>Mock Test Platform</title>
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
@@ -18,6 +17,29 @@ body {
   max-width: 480px;
   margin: auto;
   min-height: 100vh;
+}
+
+/* PAGE LOADER */
+#pageLoader {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background: #0b0d12;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.logo-box h1 {
+  font-size: 28px;
+  color: #4da6ff;
+  animation: fade 1.2s infinite alternate;
+}
+
+@keyframes fade {
+  from { opacity: 0.3; }
+  to { opacity: 1; }
 }
 
 /* HEADER */
@@ -56,7 +78,6 @@ body {
     0 6px 30px rgba(0,0,0,0.7),
     inset 0 0 0 1px rgba(255,255,255,0.05);
   transition: 0.25s;
-  animation: fadeUp 0.4s ease;
 }
 
 .card-btn:active {
@@ -68,16 +89,11 @@ body {
 .card-sub { font-size: 12px; color: #888; margin-top: 4px; }
 
 .badge {
-  font-size: 11px;
-  padding: 4px 8px;
+  font-size: 12px;
+  padding: 6px 10px;
   border-radius: 10px;
   background: rgba(77,166,255,0.2);
   color: #4da6ff;
-}
-
-.card-icon {
-  font-size: 18px;
-  margin-top: 6px;
 }
 
 /* TEST UI */
@@ -163,14 +179,17 @@ body {
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-@keyframes fadeUp {
-  from {opacity:0; transform:translateY(15px);}
-  to {opacity:1; transform:translateY(0);}
-}
   </style>
 </head>
 
 <body>
+
+<!-- PAGE LOADER -->
+<div id="pageLoader">
+  <div class="logo-box">
+    <h1>⚡ MockTest</h1>
+  </div>
+</div>
 
 <div class="app-container">
 
@@ -235,6 +254,12 @@ body {
 
 <script>
 
+window.onload = function(){
+  setTimeout(()=>{
+    document.getElementById("pageLoader").style.display="none";
+  },1000);
+};
+
 const subjects = {
   "General Science": {
     "Physics": "https://opensheet.elk.sh/1tEG2kuga3HyZRIjSjqJ4A0zqZ9yJPEk8ePly6ct_-TY/1"
@@ -257,10 +282,7 @@ function loadSubjects(){
         <div class="card-title">📘 ${sub}</div>
         <div class="card-sub">Practice MCQs</div>
       </div>
-      <div>
-        <div class="badge">New</div>
-        <div class="card-icon">›</div>
-      </div>
+      <div class="badge">New</div>
     </div>`;
   }
   subjectButtons.innerHTML=html;
@@ -273,12 +295,9 @@ function loadChapters(sub){
     <div class="card-btn" onclick="loadData('${sub}','${ch}')">
       <div>
         <div class="card-title">📖 ${ch}</div>
-        <div class="card-sub">100+ Questions</div>
+        <div class="card-sub">Start Practice</div>
       </div>
-      <div>
-        <div class="badge">Start</div>
-        <div class="card-icon">›</div>
-      </div>
+      <div class="badge">Start</div>
     </div>`;
   }
   subjectScreen.style.display="none";
@@ -307,12 +326,9 @@ function createSections(){
     <div class="card-btn" onclick="startTest(${i})">
       <div>
         <div class="card-title">Section ${i}</div>
-        <div class="card-sub">${QUESTIONS_PER_SECTION} Questions</div>
+        <div class="card-sub">Practice Set</div>
       </div>
-      <div>
-        <div class="badge">${i===1?"Recommended":"Practice"}</div>
-        <div class="card-icon">▶</div>
-      </div>
+      <div class="badge">Start Test</div>
     </div>`;
   }
   sectionButtons.innerHTML=html;
@@ -337,12 +353,27 @@ function showQuestion(){
   });
   options.innerHTML=html;
 
+  let correct=q.Answer;
+
+  if(answers[index]){
+    document.querySelectorAll(".option").forEach((o,i)=>{
+      let l=["A","B","C","D"][i];
+      if(l===correct) o.classList.add("correct");
+      if(l===answers[index] && l!==correct) o.classList.add("wrong");
+    });
+    locked=true;
+  } else {
+    locked=false;
+  }
+
   updateUI();
 }
 
 function select(opt){
-  if(locked) return;
   let correct=filteredData[index].Answer;
+
+  if(answers[index]) return;
+
   answers[index]=opt;
 
   document.querySelectorAll(".option").forEach((o,i)=>{
@@ -351,13 +382,15 @@ function select(opt){
     if(l===opt && l!==correct) o.classList.add("wrong");
   });
 
-  opt===correct?correctCount++:wrongCount++;
+  if(opt===correct) correctCount++;
+  else wrongCount++;
+
   locked=true;
   updateUI();
 }
 
-function nextQuestion(){ if(index<filteredData.length-1){index++;locked=false;showQuestion();}}
-function prevQuestion(){ if(index>0){index--;locked=false;showQuestion();}}
+function nextQuestion(){ if(index<filteredData.length-1){index++;showQuestion();}}
+function prevQuestion(){ if(index>0){index--;showQuestion();}}
 
 function exitTest(){
   testScreen.style.display="none";
