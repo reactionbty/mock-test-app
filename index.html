@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Testbank - Practice MCQs</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="description" content="Practice and ace your exams with Testbank">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,6 +34,12 @@
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Prevent scrolling during initial load */
+    body.loading {
+      overflow: hidden !important;
     }
 
     body {
@@ -42,6 +48,18 @@
       color: var(--text-primary);
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    body::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Hide scrollbar for IE, Edge and Firefox */
+    body {
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
     }
 
     /* ===== APP CONTAINER ===== */
@@ -63,6 +81,7 @@
       align-items: center;
       z-index: 1000;
       gap: 16px;
+      overflow: hidden; /* Ensure no scrollbars on the loader itself */
     }
 
     .logo-box {
@@ -454,7 +473,7 @@
 
     /* Summary */
     .score-summary {
-      background: var(--surface);
+      background: rgba(255, 255, 255, 0.03);
       border-radius: 12px;
       padding: 14px 16px;
       margin-bottom: 20px;
@@ -502,7 +521,7 @@
     }
 
     .action-btn.retry {
-      background: var(--surface);
+      background: var(--bg-card-hover);
       color: var(--text-primary);
       border: 1px solid var(--border);
     }
@@ -517,7 +536,7 @@
     }
 
     .action-btn.exit:hover {
-      background: var(--primary-hover);
+      background: #3b9bff;
     }
 
     .action-btn svg {
@@ -622,6 +641,7 @@
       background: rgba(10, 12, 20, 0.95);
       backdrop-filter: blur(10px);
       border-top: 1px solid var(--border);
+      z-index: 50;
     }
 
     .bottom button {
@@ -698,18 +718,6 @@
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ===== EMPTY STATE ===== */
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      color: var(--text-muted);
-    }
-
-    .empty-state-icon {
-      font-size: 48px;
-      margin-bottom: 16px;
     }
 
     /* ===== LOGIN SCREEN ===== */
@@ -835,7 +843,7 @@
     </style>
 </head>
 
-<body>
+<body class="loading">
 
 <!-- PAGE LOADER -->
 <div id="pageLoader">
@@ -959,7 +967,6 @@
   <!-- SCORECARD SCREEN -->
   <div id="scorecardScreen" class="screen scorecard-screen" style="display:none;">
     <div class="scorecard-container">
-      <!-- Header -->
       <div class="scorecard-header">
         <div class="scorecard-icon">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -975,7 +982,6 @@
         <p id="scorecardGrade" class="scorecard-grade"></p>
       </div>
 
-      <!-- Score Display -->
       <div class="score-display">
         <div id="scorecardPercent" class="score-percent">0%</div>
         <div class="score-label">Your Score</div>
@@ -984,7 +990,6 @@
         </div>
       </div>
 
-      <!-- Stats -->
       <div class="score-stats">
         <div class="score-stat">
           <div class="score-stat-icon correct">&#10003;</div>
@@ -1003,7 +1008,6 @@
         </div>
       </div>
 
-      <!-- Summary -->
       <div class="score-summary">
         <div class="summary-row">
           <span class="summary-label">Total Questions</span>
@@ -1015,7 +1019,6 @@
         </div>
       </div>
 
-      <!-- Action Buttons -->
       <div class="scorecard-actions">
         <button class="action-btn retry" onclick="retryTest()">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1050,8 +1053,9 @@
   window.onload = function() {
     setTimeout(() => {
       document.getElementById("pageLoader").style.display = "none";
+      document.body.classList.remove("loading");
       checkLoginStatus();
-    }, 1200);
+    }, 1500);
   };
 
   // Login credentials
@@ -1200,7 +1204,6 @@
       })
       .catch(err => {
         hideLoader();
-        alert("Failed to load questions. Please try again.");
         console.error(err);
       });
   }
@@ -1229,10 +1232,6 @@
     sectionButtons.innerHTML = html;
   }
 
-  /**
-   * Helper function to shuffle an array
-   * Uses Fisher-Yates algorithm
-   */
   function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -1243,9 +1242,7 @@
 
   function startTest(sec) {
     const start = (sec - 1) * QUESTIONS_PER_SECTION;
-    // Get the slice for this section
     const sectionData = data.slice(start, start + QUESTIONS_PER_SECTION);
-    // Shuffle the questions for this session
     filteredData = shuffleArray([...sectionData]);
     
     index = 0;
@@ -1279,7 +1276,6 @@
 
     const correctAnswer = q.Answer;
 
-    // If already answered, show the result
     if (answers[index]) {
       document.querySelectorAll(".option").forEach((o, i) => {
         const letter = letters[i];
@@ -1299,7 +1295,6 @@
 
     updateUI();
     
-    // Update Next/Finish button
     const nextFinishBtn = document.getElementById("nextFinishBtn");
     if (index === filteredData.length - 1) {
       nextFinishBtn.innerHTML = "Finish &#10003;";
@@ -1343,7 +1338,6 @@
       index++;
       showQuestion();
     } else {
-      // Last question - show scorecard
       showScorecard();
     }
   }
@@ -1355,7 +1349,6 @@
     const skipped = total - correctVal - wrongVal;
     const percent = Math.round((correctVal / total) * 100);
     
-    // Set grade
     let grade, gradeColor;
     if (percent >= 90) {
       grade = "Excellent!";
@@ -1386,9 +1379,7 @@
   }
   
   function retryTest() {
-    // When retrying, re-shuffle to ensure a fresh experience
     filteredData = shuffleArray([...filteredData]);
-    
     index = 0;
     correctCount = 0;
     wrongCount = 0;
@@ -1435,7 +1426,6 @@
     progressBar.style.width = ((index + 1) / filteredData.length * 100) + "%";
   }
 
-  // Initialize
   loadSubjects();
 </script>
 
