@@ -1229,9 +1229,25 @@
     sectionButtons.innerHTML = html;
   }
 
+  /**
+   * Helper function to shuffle an array
+   * Uses Fisher-Yates algorithm
+   */
+  function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
+
   function startTest(sec) {
     const start = (sec - 1) * QUESTIONS_PER_SECTION;
-    filteredData = data.slice(start, start + QUESTIONS_PER_SECTION);
+    // Get the slice for this section
+    const sectionData = data.slice(start, start + QUESTIONS_PER_SECTION);
+    // Shuffle the questions for this session
+    filteredData = shuffleArray([...sectionData]);
+    
     index = 0;
     correctCount = 0;
     wrongCount = 0;
@@ -1370,8 +1386,14 @@
   }
   
   function retryTest() {
+    // When retrying, re-shuffle to ensure a fresh experience
+    filteredData = shuffleArray([...filteredData]);
+    
     index = 0;
-    answered = {};
+    correctCount = 0;
+    wrongCount = 0;
+    answers = {};
+    
     document.getElementById("correct").innerText = "0";
     document.getElementById("wrong").innerText = "0";
     document.getElementById("scorecardScreen").style.display = "none";
