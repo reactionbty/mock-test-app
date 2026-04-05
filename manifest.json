@@ -1,0 +1,15 @@
+{
+  "name": "Testbank",
+  "short_name": "Testbank",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0a0c14",
+  "theme_color": "#4da6ff",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
