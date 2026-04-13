@@ -42,7 +42,6 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* Prevent scrolling during initial load */
     body.loading {
       overflow: hidden !important;
     }
@@ -56,18 +55,15 @@
       overflow-x: hidden;
     }
 
-    /* Hide scrollbar for Chrome, Safari and Opera */
     body::-webkit-scrollbar {
       display: none;
     }
 
-    /* Hide scrollbar for IE, Edge and Firefox */
     body {
-      -ms-overflow-style: none;  /* IE and Edge */
-      scrollbar-width: none;  /* Firefox */
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
 
-    /* ===== APP CONTAINER ===== */
     .app-container {
       max-width: 480px;
       margin: 0 auto;
@@ -75,7 +71,6 @@
       position: relative;
     }
 
-    /* ===== PAGE LOADER ===== */
     #pageLoader {
       position: fixed;
       inset: 0;
@@ -86,7 +81,7 @@
       align-items: center;
       z-index: 1000;
       gap: 16px;
-      overflow: hidden; /* Ensure no scrollbars on the loader itself */
+      overflow: hidden;
     }
 
     .logo-box {
@@ -135,7 +130,6 @@
       50% { transform: scale(1.02); opacity: 0.9; }
     }
 
-    /* ===== HEADER ===== */
     .header {
       padding: 24px 20px 16px;
     }
@@ -157,7 +151,6 @@
       font-size: 15px;
     }
 
-    /* ===== GRID ===== */
     .grid {
       padding: 8px 20px 120px;
       display: flex;
@@ -165,7 +158,6 @@
       gap: 12px;
     }
 
-    /* ===== CARD BUTTON ===== */
     .card-btn {
       display: flex;
       justify-content: space-between;
@@ -236,7 +228,6 @@
       font-size: 20px;
     }
 
-    /* ===== TEST UI ===== */
     .top {
       padding: 16px 20px;
       background: var(--bg-card);
@@ -331,7 +322,6 @@
       background: rgba(239, 68, 68, 0.1);
     }
 
-    /* Scorecard Screen */
     .scorecard-screen {
       display: flex;
       align-items: center;
@@ -384,7 +374,6 @@
       font-weight: 600;
     }
 
-    /* Score Display */
     .score-display {
       text-align: center;
       padding: 20px 0;
@@ -421,7 +410,6 @@
       transition: width 0.5s ease;
     }
 
-    /* Stats Row */
     .score-stats {
       display: flex;
       justify-content: center;
@@ -476,7 +464,6 @@
       letter-spacing: 0.5px;
     }
 
-    /* Summary */
     .score-summary {
       background: rgba(255, 255, 255, 0.03);
       border-radius: 12px;
@@ -504,7 +491,6 @@
       color: var(--text-primary);
     }
 
-    /* Action Buttons */
     .scorecard-actions {
       display: flex;
       gap: 10px;
@@ -554,7 +540,6 @@
       font-size: 13px;
     }
 
-    /* ===== QUESTION ===== */
     .question {
       padding: 24px 20px;
       font-size: 18px;
@@ -563,7 +548,6 @@
       color: var(--text-primary);
     }
 
-    /* ===== OPTIONS ===== */
     .options-container {
       padding: 0 20px 120px;
       display: flex;
@@ -631,7 +615,6 @@
       opacity: 0.7;
     }
 
-    /* ===== BOTTOM BAR ===== */
     .bottom {
       position: fixed;
       bottom: 0;
@@ -691,7 +674,6 @@
       color: var(--text-primary);
     }
 
-    /* ===== LOADER OVERLAY ===== */
     #loader {
       position: fixed;
       inset: 0;
@@ -715,7 +697,6 @@
       to { transform: rotate(360deg); }
     }
 
-    /* ===== SCREEN TRANSITIONS ===== */
     .screen {
       animation: fadeIn 0.3s ease;
     }
@@ -725,7 +706,6 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* ===== LOGIN SCREEN ===== */
     #loginScreen {
       min-height: 100vh;
       display: flex;
@@ -1054,7 +1034,6 @@
 </div>
 
 <script>
-  // Hide page loader after load
   window.onload = function() {
     setTimeout(() => {
       document.getElementById("pageLoader").style.display = "none";
@@ -1063,7 +1042,6 @@
     }, 1500);
   };
 
-  // Login credentials
   const VALID_LOGIN_ID = "testbank";
   const VALID_PASSWORD = "2278628279";
 
@@ -1095,7 +1073,6 @@
     }
   }
 
-  // Subject and chapter configuration
   const subjects = {
     "Vocabulary": {
       "One Word Substitution": "https://opensheet.elk.sh/1tEG2kuga3HyZRIjSjqJ4A0zqZ9yJPEk8ePly6ct_-TY/1",
@@ -1105,12 +1082,11 @@
     },
    "Polity": {
     "President and Vise-President": "https://opensheet.elk.sh/1ABv8ThGhEo1rfqoDnxBIbgTv6_vYcidpI_X5_uyXRhM/sheet1"
-  } 
+    } 
   };
 
   const QUESTIONS_PER_SECTION = 50;
 
-  // State variables
   let data = [];
   let filteredData = [];
   let index = 0;
@@ -1121,7 +1097,6 @@
   let currentSubject = "";
   let currentChapter = "";
 
-  // DOM references
   const loader = document.getElementById("loader");
   const subjectButtons = document.getElementById("subjectButtons");
   const chapterButtons = document.getElementById("chapterButtons");
@@ -1248,7 +1223,29 @@
   function startTest(sec) {
     const start = (sec - 1) * QUESTIONS_PER_SECTION;
     const sectionData = data.slice(start, start + QUESTIONS_PER_SECTION);
+    
+    // Shuffle question order
     filteredData = shuffleArray([...sectionData]);
+    
+    // New Feature: Pre-generate shuffled options for each question to maintain state
+    filteredData.forEach(q => {
+      const originalCorrectText = q[q.Answer];
+      const allOptions = [];
+      ["A", "B", "C", "D"].forEach(key => {
+        if (q[key]) allOptions.push({ originalKey: key, text: q[key] });
+      });
+
+      // Shuffle the list of options
+      const shuffledOptions = shuffleArray([...allOptions]);
+      
+      // Store the shuffled version on the question object
+      q._shuffledOptions = shuffledOptions;
+      
+      // Find what the new "Correct Answer" key is (A, B, C, or D)
+      const letters = ["A", "B", "C", "D"];
+      const newCorrectIdx = shuffledOptions.findIndex(o => o.text === originalCorrectText);
+      q._shuffledCorrectKey = letters[newCorrectIdx];
+    });
     
     index = 0;
     correctCount = 0;
@@ -1268,19 +1265,20 @@
     let html = "";
     const letters = ["A", "B", "C", "D"];
 
-    letters.forEach(opt => {
-      if (q[opt]) {
-        html += `
-          <div class="option" onclick="select('${opt}')">
-            <div class="option-letter">${opt}</div>
-            <div class="option-text">${q[opt]}</div>
-          </div>`;
-      }
+    // Render options using the pre-shuffled list
+    q._shuffledOptions.forEach((optObj, i) => {
+      const letter = letters[i];
+      html += `
+        <div class="option" onclick="select('${letter}')">
+          <div class="option-letter">${letter}</div>
+          <div class="option-text">${optObj.text}</div>
+        </div>`;
     });
 
     options.innerHTML = html;
 
-    const correctAnswer = q.Answer;
+    // Use the shuffled correct key for checking
+    const correctAnswer = q._shuffledCorrectKey;
 
     if (answers[index]) {
       document.querySelectorAll(".option").forEach((o, i) => {
@@ -1312,7 +1310,8 @@
   function select(opt) {
     if (answers[index]) return;
 
-    const correctAnswer = filteredData[index].Answer;
+    const q = filteredData[index];
+    const correctAnswer = q._shuffledCorrectKey;
     answers[index] = opt;
 
     const letters = ["A", "B", "C", "D"];
@@ -1385,7 +1384,19 @@
   }
   
   function retryTest() {
+    // Re-shuffle everything for retry
     filteredData = shuffleArray([...filteredData]);
+    filteredData.forEach(q => {
+      // Re-shuffle options as well on retry for maximum randomness
+      const originalCorrectText = q._shuffledOptions.find(o => o.originalKey === q.Answer).text;
+      const baseOptions = q._shuffledOptions.map(o => ({ ...o }));
+      const freshShuffled = shuffleArray(baseOptions);
+      q._shuffledOptions = freshShuffled;
+      const letters = ["A", "B", "C", "D"];
+      const newCorrectIdx = freshShuffled.findIndex(o => o.text === originalCorrectText);
+      q._shuffledCorrectKey = letters[newCorrectIdx];
+    });
+
     index = 0;
     correctCount = 0;
     wrongCount = 0;
@@ -1433,13 +1444,14 @@
   }
 
   loadSubjects();
+
   if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js')
-      .then(reg => console.log("Service Worker registered"))
-      .catch(err => console.log("SW error", err));
-  });
-}
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log("Service Worker registered"))
+        .catch(err => console.log("SW error", err));
+    });
+  }
 </script>
 
 </body>
