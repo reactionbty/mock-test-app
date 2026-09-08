@@ -1186,6 +1186,26 @@
       text-align: center;
     }
 
+    .csv-upload-section { display: block !important; visibility: visible !important; }
+    .csv-upload-box {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr auto;
+      gap: 10px;
+      align-items: end;
+    }
+    .csv-upload-help { margin-top: 9px; color: var(--text-muted); font-size: 11px; line-height: 1.5; }
+    .csv-upload-help code { color: var(--text-secondary); background: rgba(255,255,255,.04); padding: 2px 5px; border-radius: 5px; }
+    .csv-file-name { margin-top: 7px; color: var(--text-secondary); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .csv-preview { margin-top: 14px; }
+    .csv-preview-summary { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:9px; color:var(--text-secondary); font-size:12px; }
+    .csv-preview-table { width:100%; border-collapse:collapse; font-size:11px; }
+    .csv-preview-table th, .csv-preview-table td { padding:8px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    .csv-preview-table th { color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.4px; }
+    .csv-preview-table td { color:var(--text-secondary); }
+    .csv-preview-error { margin-top:10px; padding:10px 12px; border-radius:10px; border:1px solid rgba(239,68,68,.22); background:var(--error-bg); color:#fca5a5; font-size:12px; line-height:1.5; }
+    @media (max-width: 860px) { .csv-upload-box { grid-template-columns: 1fr 1fr; } .csv-upload-box .admin-btn { grid-column: 1 / -1; } }
+    @media (max-width: 560px) { .csv-upload-box { grid-template-columns: 1fr; } }
+
     .admin-modal-backdrop {
       position: fixed;
       inset: 0;
@@ -1554,23 +1574,50 @@
         <div class="admin-stat"><div class="admin-stat-label">Inactive Questions</div><div id="adminStatInactiveQuestions" class="admin-stat-value">0</div></div>
       </div>
 
+      <section class="admin-section csv-upload-section">
+        <div class="admin-section-head">
+          <div>
+            <div class="admin-section-title">Upload Questions CSV</div>
+            <div class="admin-section-subtitle">Import a complete question file into a selected chapter.</div>
+          </div>
+        </div>
+        <div class="csv-upload-box">
+          <div class="admin-form-group">
+            <label class="admin-form-label">Target Chapter</label>
+            <select id="csvTargetChapter" class="admin-select"></select>
+          </div>
+          <div class="admin-form-group">
+            <label class="admin-form-label">CSV File</label>
+            <input id="csvFileInput" class="admin-input" type="file" accept=".csv,text/csv" onchange="handleCsvFileSelected(event)">
+            <div id="csvFileName" class="csv-file-name">No file selected</div>
+          </div>
+          <button class="admin-btn primary" id="csvUploadBtn" type="button" onclick="uploadCsvQuestions()">Upload CSV</button>
+        </div>
+        <div class="csv-upload-help">Expected columns: <code>Question,A,B,C,D,Answer</code>. Optional: <code>Explanation</code>. New questions are assigned numbers after the chapter's current highest question number.</div>
+        <div id="csvPreview" class="csv-preview"></div>
+      </section>
+
       <section class="admin-section">
         <div class="admin-section-head">
           <div>
             <div class="admin-section-title">Question Bank</div>
             <div class="admin-section-subtitle">Search, edit, activate/deactivate, or remove questions.</div>
           </div>
-          <button class="admin-btn primary" onclick="openQuestionEditor()">+ Add Question</button>
+          <div class="admin-top-actions">
+            <button class="admin-btn" onclick="document.getElementById('csvTargetChapter').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('csvFileInput').focus();">Upload CSV</button>
+            <button class="admin-btn" id="toggleQuestionListBtn" onclick="toggleQuestionList()">Show Questions</button>
+            <button class="admin-btn primary" onclick="openQuestionEditor()">+ Add Question</button>
+          </div>
         </div>
         <div class="admin-filters">
-          <select id="adminSubjectFilter" class="admin-select" onchange="adminFilterChapters(); loadAdminQuestions();">
+          <select id="adminSubjectFilter" class="admin-select" onchange="adminFilterChapters(); requestQuestionListLoad();">
             <option value="">All subjects</option>
           </select>
-          <select id="adminChapterFilter" class="admin-select" onchange="loadAdminQuestions()">
+          <select id="adminChapterFilter" class="admin-select" onchange="requestQuestionListLoad()">
             <option value="">All chapters</option>
           </select>
           <input id="adminQuestionSearch" class="admin-input admin-search" placeholder="Search question text..." oninput="debouncedAdminQuestionSearch()">
-          <select id="adminStatusFilter" class="admin-select" onchange="loadAdminQuestions()">
+          <select id="adminStatusFilter" class="admin-select" onchange="requestQuestionListLoad()">
             <option value="all">All status</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
@@ -2293,6 +2340,9 @@
   let adminQuestionTimer = null;
   let editingQuestionId = null;
   let editingContentId = null;
+  let pendingCsvRows = [];
+  let pendingCsvFileName = "";
+  let adminQuestionListVisible = false;
 
   function escapeJs(value) {
     return String(value ?? "")
@@ -2381,7 +2431,7 @@
       await loadAdminContent();
       await loadAdminStats();
       adminFilterChapters();
-      await loadAdminQuestions();
+      setQuestionListVisibility(false);
     } catch (err) {
       console.error("Admin refresh error:", err);
       alert("Could not refresh the admin panel.\n\n" + (err.message || err));
@@ -2413,6 +2463,14 @@
       return `<option value="${c.id}">${escapeHtml(sub ? sub.name + " → " : "")}${escapeHtml(c.name)}${c.active ? '' : ' (inactive)'}</option>`;
     }).join("");
 
+    const csvChapter = document.getElementById("csvTargetChapter");
+    const previousCsvChapter = csvChapter.value;
+    csvChapter.innerHTML = adminChapters.map(c => {
+      const sub = adminSubjects.find(s => s.id === c.subject_id);
+      return `<option value="${c.id}">${escapeHtml(sub ? sub.name + " → " : "")}${escapeHtml(c.name)}${c.active ? '' : ' (inactive)'}</option>`;
+    }).join("");
+    if (adminChapters.some(c => c.id === previousCsvChapter)) csvChapter.value = previousCsvChapter;
+
     const contentList = document.getElementById("adminContentList");
     if (!adminSubjects.length) {
       contentList.innerHTML = '<div class="admin-empty">No subjects created yet.</div>';
@@ -2443,6 +2501,171 @@
     }).join("");
   }
 
+  function parseCsvLine(line) {
+    const cells = [];
+    let value = "";
+    let quoted = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (quoted && line[i + 1] === '"') { value += '"'; i++; }
+        else quoted = !quoted;
+      } else if (ch === ',' && !quoted) {
+        cells.push(value); value = "";
+      } else value += ch;
+    }
+    cells.push(value);
+    return cells;
+  }
+
+  function parseCsvText(text) {
+    text = String(text || "").replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    const rows = [];
+    let row = [];
+    let cell = "";
+    let quoted = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === '"') {
+        if (quoted && text[i + 1] === '"') { cell += '"'; i++; }
+        else quoted = !quoted;
+      } else if (ch === ',' && !quoted) {
+        row.push(cell); cell = "";
+      } else if (ch === '\n' && !quoted) {
+        row.push(cell); cell = "";
+        if (row.some(v => String(v).trim() !== "")) rows.push(row);
+        row = [];
+      } else cell += ch;
+    }
+    if (quoted) throw new Error("The CSV contains an unclosed quoted field.");
+    row.push(cell);
+    if (row.some(v => String(v).trim() !== "")) rows.push(row);
+    return rows;
+  }
+
+  function normalizeCsvAnswer(value) {
+    const v = String(value || "").trim().toUpperCase();
+    if (["A","B","C","D"].includes(v)) return v;
+    if (v === "1" || v === "OPTION A") return "A";
+    if (v === "2" || v === "OPTION B") return "B";
+    if (v === "3" || v === "OPTION C") return "C";
+    if (v === "4" || v === "OPTION D") return "D";
+    return "";
+  }
+
+  function handleCsvFileSelected(event) {
+    const file = event.target.files?.[0];
+    pendingCsvRows = [];
+    pendingCsvFileName = file?.name || "";
+    document.getElementById("csvFileName").innerText = file ? `${file.name} · ${(file.size / 1024).toFixed(1)} KB` : "No file selected";
+    document.getElementById("csvPreview").innerHTML = "";
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const rawRows = parseCsvText(reader.result);
+        if (rawRows.length < 2) throw new Error("The CSV must contain a header row and at least one question.");
+        const headers = rawRows[0].map(h => String(h).trim().toLowerCase());
+        const aliases = {
+          question: ["question", "question_text"],
+          a: ["a", "option_a"], b: ["b", "option_b"], c: ["c", "option_c"], d: ["d", "option_d"],
+          answer: ["answer", "correct_answer", "correct_option"],
+          explanation: ["explanation"]
+        };
+        const idx = {};
+        Object.keys(aliases).forEach(key => idx[key] = aliases[key].map(x => headers.indexOf(x)).find(i => i >= 0));
+        ["question","a","b","c","d","answer"].forEach(key => { if (idx[key] == null || idx[key] < 0) throw new Error(`Missing required CSV column: ${key}`); });
+        pendingCsvRows = rawRows.slice(1).map((r, n) => ({
+          _row: n + 2,
+          question: String(r[idx.question] ?? "").trim(),
+          a: String(r[idx.a] ?? "").trim(),
+          b: String(r[idx.b] ?? "").trim(),
+          c: String(r[idx.c] ?? "").trim(),
+          d: String(r[idx.d] ?? "").trim(),
+          answer: normalizeCsvAnswer(r[idx.answer]),
+          explanation: idx.explanation != null && idx.explanation >= 0 ? String(r[idx.explanation] ?? "").trim() : ""
+        })).filter(r => r.question || r.a || r.b || r.c || r.d || r.answer);
+        const errors = [];
+        pendingCsvRows.forEach(r => {
+          if (!r.question) errors.push(`Row ${r._row}: question is empty.`);
+          if (!r.a || !r.b || !r.c || !r.d) errors.push(`Row ${r._row}: all four options are required.`);
+          if (!r.answer) errors.push(`Row ${r._row}: Answer must be A, B, C, or D.`);
+        });
+        renderCsvPreview(errors);
+      } catch (err) {
+        pendingCsvRows = [];
+        document.getElementById("csvPreview").innerHTML = `<div class="csv-preview-error">${escapeHtml(err.message || err)}</div>`;
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function renderCsvPreview(errors = []) {
+    const box = document.getElementById("csvPreview");
+    if (!pendingCsvRows.length) { box.innerHTML = ""; return; }
+    const previewRows = pendingCsvRows.slice(0, 5);
+    box.innerHTML = `
+      <div class="csv-preview-summary"><span>${pendingCsvRows.length} question${pendingCsvRows.length === 1 ? '' : 's'} detected${pendingCsvRows.length > 5 ? ' · showing first 5' : ''}</span><span>${errors.length ? `${errors.length} issue${errors.length === 1 ? '' : 's'}` : 'Ready to upload'}</span></div>
+      <div class="admin-table-wrap"><table class="csv-preview-table"><thead><tr><th>Row</th><th>Question</th><th>A</th><th>B</th><th>C</th><th>D</th><th>Answer</th></tr></thead><tbody>
+      ${previewRows.map(r => `<tr><td>${r._row}</td><td>${escapeHtml(r.question)}</td><td>${escapeHtml(r.a)}</td><td>${escapeHtml(r.b)}</td><td>${escapeHtml(r.c)}</td><td>${escapeHtml(r.d)}</td><td>${escapeHtml(r.answer || '—')}</td></tr>`).join("")}
+      </tbody></table></div>
+      ${errors.length ? `<div class="csv-preview-error">${errors.slice(0, 8).map(e => escapeHtml(e)).join("<br>")}${errors.length > 8 ? `<br>+ ${errors.length - 8} more issue(s)` : ''}</div>` : ''}`;
+  }
+
+  async function uploadCsvQuestions() {
+    const chapterId = document.getElementById("csvTargetChapter").value;
+    const btn = document.getElementById("csvUploadBtn");
+    if (!chapterId) { alert("Choose a target chapter first."); return; }
+    if (!pendingCsvRows.length) { alert("Choose a CSV file first."); return; }
+    const invalid = pendingCsvRows.filter(r => !r.question || !r.a || !r.b || !r.c || !r.d || !r.answer);
+    if (invalid.length) { alert(`Please fix ${invalid.length} invalid row(s) in the CSV before uploading.`); return; }
+    const chapter = adminChapters.find(c => c.id === chapterId);
+    const ok = confirm(`Upload ${pendingCsvRows.length} question(s) to "${chapter?.name || 'selected chapter'}"?`);
+    if (!ok) return;
+    btn.disabled = true; btn.innerText = "Uploading...";
+    showLoader();
+    try {
+      const { data: lastNumberRows, error: numberError } = await adminSupabase.from("question_bank").select("question_number").eq("chapter_id", chapterId).not("question_number", "is", null).order("question_number", { ascending: false }).limit(1);
+      if (numberError) throw numberError;
+      let nextNumber = Number(lastNumberRows?.[0]?.question_number || 0) + 1;
+      const payloads = pendingCsvRows.map(r => ({
+        chapter_id: chapterId,
+        question_text: r.question,
+        option_a: r.a,
+        option_b: r.b,
+        option_c: r.c,
+        option_d: r.d,
+        correct_option: r.answer,
+        explanation: r.explanation || null,
+        difficulty: "medium",
+        question_number: nextNumber++,
+        active: true,
+        source_reference: pendingCsvFileName || null
+      }));
+      // Insert in small batches to keep large CSV uploads reliable.
+      for (let i = 0; i < payloads.length; i += 50) {
+        const chunk = payloads.slice(i, i + 50);
+        const { error } = await adminSupabase.from("question_bank").insert(chunk);
+        if (error) throw error;
+        btn.innerText = `Uploading ${Math.min(i + chunk.length, payloads.length)}/${payloads.length}...`;
+      }
+      alert(`${payloads.length} question(s) uploaded successfully.`);
+      document.getElementById("csvFileInput").value = "";
+      document.getElementById("csvFileName").innerText = "No file selected";
+      document.getElementById("csvPreview").innerHTML = "";
+      pendingCsvRows = [];
+      pendingCsvFileName = "";
+      await loadAdminContent();
+      await loadAdminStats();
+      if (adminQuestionListVisible) await loadAdminQuestions();
+    } catch (err) {
+      console.error("CSV upload error:", err);
+      alert("Could not upload the CSV.\n\n" + (err.message || err));
+    } finally {
+      hideLoader(); btn.disabled = false; btn.innerText = "Upload CSV";
+    }
+  }
+
   async function loadAdminStats() {
     const [{ count: activeCount, error: activeErr }, { count: inactiveCount, error: inactiveErr }] = await Promise.all([
       adminSupabase.from("question_bank").select("id", { count: "exact", head: true }).eq("active", true),
@@ -2463,13 +2686,42 @@
     if (chapters.some(c => c.id === current)) select.value = current;
   }
 
+  function setQuestionListVisibility(visible) {
+    adminQuestionListVisible = !!visible;
+    const box = document.getElementById("adminQuestionTable");
+    const btn = document.getElementById("toggleQuestionListBtn");
+    if (!adminQuestionListVisible) {
+      box.innerHTML = '<div class="admin-empty">Question list is hidden. Use the filters/search and click “Show Questions” to load it.</div>';
+      if (btn) btn.innerText = "Show Questions";
+    } else {
+      if (btn) btn.innerText = "Hide Questions";
+    }
+  }
+
+  async function toggleQuestionList() {
+    setQuestionListVisibility(!adminQuestionListVisible);
+    if (adminQuestionListVisible) await loadAdminQuestions();
+  }
+
+  function requestQuestionListLoad() {
+    // Filters may change while the question list is hidden.
+    // Do not load the full question table until the user explicitly clicks Show Questions.
+    if (adminQuestionListVisible) {
+      loadAdminQuestions();
+    }
+  }
+
   function debouncedAdminQuestionSearch() {
     clearTimeout(adminQuestionTimer);
-    adminQuestionTimer = setTimeout(loadAdminQuestions, 250);
+    adminQuestionTimer = setTimeout(requestQuestionListLoad, 250);
   }
 
   async function loadAdminQuestions() {
     const box = document.getElementById("adminQuestionTable");
+    if (!adminQuestionListVisible) {
+      setQuestionListVisibility(false);
+      return;
+    }
     box.innerHTML = '<div class="admin-empty">Loading questions...</div>';
     try {
       const chapterId = document.getElementById("adminChapterFilter").value;
